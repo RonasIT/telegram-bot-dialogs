@@ -16,7 +16,7 @@ use Illuminate\Support\Facades\Log;
 use Symfony\Component\Yaml\Exception\ParseException;
 use Symfony\Component\Yaml\Parser;
 use Telegram\Bot\Actions;
-use Telegram\Bot\Api;
+use Telegram\Bot\Laravel\Facades\Telegram;
 use Telegram\Bot\Objects\Update;
 
 /**
@@ -33,6 +33,11 @@ class Dialog
     protected $current = 0;
     protected $yes = null;
     protected $no = null;
+
+    /**
+     * @var string
+     */
+    protected $lostDataResponseMessage = 'Ваши прошлые ответы бесследно утеряны.';
 
     /**
      * @param int $next
@@ -57,22 +62,14 @@ class Dialog
     {
         return $this->next;
     }
-    /**
-     * @var Api
-     */
-    protected $telegram;
 
-    /**
-     * @param Api $telegram
-     */
-    public function setTelegram(Api $telegram)
-    {
-        $this->telegram = $telegram;
-    }
     /**
      * @var Update
      */
     protected $update;
+    //@todo make fixes with memory handling if more than one dialog will be present in the system
+    // we should make this cause information is saved by chatId and
+    // there can be interference between different dialogs
     protected $memory = '';
 
     /**
@@ -117,12 +114,29 @@ class Dialog
         $this->current = $this->next;
 
         if (!$this->isEnd()) {
-            $this->telegram->sendChatAction([
+            Telegram::sendChatAction([
                 'chat_id' => $this->update->getMessage()->getChat()->getId(),
                 'action' => Actions::TYPING
             ]);
 
             $step = $this->steps[$this->current];
+
+            $memory = json_decode($this->getMemory());
+            if (is_null($memory)) {
+                $memory = new \stdClass();
+            }
+            //check if there is information on previous required steps (labeled with "'save'=>true" step attribute)
+            foreach($this->steps as $k=>$checkStep) {
+                if ($k==$this->current)
+                    break;
+                if (is_array($checkStep)) {
+                    if (!empty($checkStep['save']) && empty($memory->{$checkStep['name']})) {
+                        $this->end();
+                        $this->respondToCurrentRequest($this->lostDataResponseMessage);
+                        return;
+                    }
+                }
+            }
 
             if (is_array($step)) {
                 if (!isset($step['name'])) {
@@ -141,16 +155,17 @@ class Dialog
             $this->no = null;
 
             if (is_array($step)) {
+                if (!empty($step['save'])) { //not null and true
+                    $memory->{$name} = $this->getMessageText();
+                }
                 if (isset($step['is_dich']) && $step['is_dich'] && $this->processYesNo($step)) {
-
                     return;
                 } elseif (!empty($step['jump'])) {
                     $this->jump($step['jump']);
                 }
             }
-
+            $this->setMemory(json_encode($memory));
             $this->$name($step);
-
             // Step forward only if did not changes inside the step handler
             if ($this->next == $this->current) {
                 $this->next++;
@@ -256,6 +271,16 @@ class Dialog
         return $this->update->getMessage()->getChat();
     }
 
+
+    /**
+     * Returns current user message text
+     * @return string
+     */
+    public function getMessageText()
+    {
+        return $this->update->getMessage()->getText();
+    }
+
     /**
      * @param string $name
      * @param array $args
@@ -286,7 +311,7 @@ class Dialog
                 $params['parse_mode'] = 'Markdown';
             }
 
-            $this->telegram->sendMessage($params);
+            Telegram::sendMessage($params);
         }
 
         if (!empty($step['jump'])) {
@@ -304,6 +329,20 @@ class Dialog
     {
         $this->steps = $steps;
     }
+
+    /**
+     * Sends message with $text to currently handling request
+     *
+     * @param $text string message
+     * @return \Telegram\Bot\Objects\Message
+     */
+    protected function respondToCurrentRequest($text) {
+        return Telegram::sendMessage([
+                'chat_id' => $this->getChat()->getId(),
+                'text' => $text
+        ]);
+    }
+
 
     /**
      * Load steps from file (php or yaml formats)

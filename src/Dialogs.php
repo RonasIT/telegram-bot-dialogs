@@ -9,7 +9,7 @@
 
 namespace BotDialogs;
 
-use Illuminate\Redis\Database as Redis;
+use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Config;
 use Telegram\Bot\Api;
 use Telegram\Bot\Objects\Update;
@@ -20,33 +20,14 @@ use Telegram\Bot\Objects\Update;
  */
 class Dialogs
 {
-    /**
-     * @var Api
-     */
-    protected $telegram;
 
-    /**
-     * @var Redis
-     */
-    protected $redis;
 
-    /**
-     * @param Api $telegram
-     * @param Redis $redis
-     */
-    public function __construct(Api $telegram, Redis $redis)
-    {
-        $this->telegram = $telegram;
-        $this->redis = $redis;
-    }
     /**
      * @param Dialog $dialog
      * @return Dialog
      */
     public function add(Dialog $dialog)
     {
-        $dialog->setTelegram($this->telegram);
-
         // save new dialog
         $chatId = $dialog->getChat()->getId();
         $this->setField($chatId, 'next', $dialog->getNext());
@@ -63,19 +44,17 @@ class Dialogs
     public function get(Update $update)
     {
         $chatId = $update->getMessage()->getChat()->getId();
-        $redis = $this->redis;
 
-        if (!$redis->exists($chatId)) {
+        if (!Redis::exists($chatId)) {
             return false;
         }
 
-        $next = $redis->hget($chatId, 'next');
-        $name = $redis->hget($chatId, 'dialog');
-        $memory = $redis->hget($chatId, 'memory');
+        $next = Redis::hget($chatId, 'next');
+        $name = Redis::hget($chatId, 'dialog');
+        $memory = Redis::hget($chatId, 'memory');
 
         /** @var Dialog $dialog */
         $dialog = new $name($update); // @todo look at the todo above about code safety
-        $dialog->setTelegram($this->telegram);
         $dialog->setNext($next);
         $dialog->setMemory($memory);
 
@@ -96,7 +75,7 @@ class Dialogs
         $dialog->proceed();
 
         if ($dialog->isEnd()) {
-            $this->redis->del($chatId);
+            Redis::del($chatId);
         } else {
             $this->setField($chatId, 'next', $dialog->getNext());
             $this->setField($chatId, 'memory', $dialog->getMemory());
@@ -109,7 +88,7 @@ class Dialogs
      */
     public function exists(Update $update)
     {
-        if (!$this->redis->exists($update->getMessage()->getChat()->getId())) {
+        if (!Redis::exists($update->getMessage()->getChat()->getId())) {
             return false;
         }
 
@@ -123,13 +102,11 @@ class Dialogs
      */
     protected function setField($key, $field, $value)
     {
-        $redis = $this->redis;
+        Redis::multi();
 
-        $redis->multi();
+        Redis::hset($key, $field, $value);
+        Redis::expire($key, Config::get('dialogs.expires'));
 
-        $redis->hset($key, $field, $value);
-        $redis->expire($key, Config::get('dialogs.expires'));
-
-        $redis->exec();
+        Redis::exec();
     }
 }

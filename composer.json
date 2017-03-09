@@ -1,14 +1,18 @@
 {
-  "name": "zarincheg/telegram-bot-dialogs",
+  "name": "components/telegram-bot-dialogs",
   "description": "Telegram Bot API PHP SDK extension that allows to implement dialogs in bots",
   "type": "library",
-  "homepage": "https://github.com/zarincheg/telegram-bot-dialogs",
+  "homepage": "https://projects.ronasit.com/components/telegram-bot-dialogs",
   "license": "MIT",
-  "version": "0.2.0-dev",
+  "version": "0.2.1-dev",
   "authors": [
     {
       "name": "Kirill Zorin",
       "email": "zarincheg@gmail.com"
+    },
+    {
+      "name": "Stanislav Usov",
+      "email": "susov@ronasit.com"
     }
   ],
   "autoload": {
