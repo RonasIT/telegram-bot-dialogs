@@ -1,7 +1,7 @@
 # telegram-bot-dialogs
 The extension for Telegram Bot API PHP SDK that allows to implement dialogs in bots
 
-This libriary allows to make simple dialogs for your Telegram bots that based on the Telegram Bot API - PHP SDK (https://github.com/irazasyed/telegram-bot-sdk).
+This libriary allows to make simple dialogs for your Telegram bots that based on the Telegram Bot API - PHP SDK (Original library: https://github.com/irazasyed/telegram-bot-sdk).
 
 ###Installation
 You can easy install the package using Composer:
@@ -133,6 +133,8 @@ class HelloDialog extends Dialog
 In this case, if you don't need any logic inside the step handler - you can don't define it. Just put the response inside the step definition. It works good for welcome messages, messages with tips/advices and so on. If you want format response with markdown, just set `markdown` field to `true`.
 
 Also, you can control dialog direction in step by defining `jump ` and `end` fields. `jump` acts as `jump()` method - dialog jumps to particular step. `end` field, is set to `true`, ends dialog after current step.
+
+What is more, you can define `'save'=>true` field. This will lead to automatic saving of user answers to redis database, which can be accessible on any step while dialog is open with `Dialog::getMemory()` method. Library will also check if previous answers labeled with `save` attribute can be found on database. If not, dialog will be automatically closed and user will receive message. It is predefined with `Dialog::$lostDataResponseMessage`, which can be rewritten in your classes.
 
 Also, you can use `is_dich` (is it a dichotomous question) option of the step. If this option set to true, you can use `yes` and `no` fields of the Dialog instance to check user answer. For example:
 ```php
