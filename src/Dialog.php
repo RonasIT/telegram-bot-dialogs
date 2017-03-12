@@ -34,6 +34,8 @@ class Dialog
     protected $yes = null;
     protected $no = null;
 
+    private $stay = false;
+
     /**
      * @var string
      */
@@ -167,7 +169,7 @@ class Dialog
             $this->setMemory(json_encode($memory));
             $this->$name($step);
             // Step forward only if did not changes inside the step handler
-            if ($this->next == $this->current) {
+            if ($this->next == $this->current && !$this->stay) {
                 $this->next++;
             }
         }
@@ -225,6 +227,14 @@ class Dialog
                 break;
             }
         }
+    }
+
+    /**
+     * Stay on current step
+     */
+    public function stay() {
+        $this->setNext($this->current);
+        $this->stay = true;
     }
 
     /**
