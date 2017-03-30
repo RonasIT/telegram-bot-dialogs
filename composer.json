@@ -4,7 +4,7 @@
   "type": "library",
   "homepage": "https://projects.ronasit.com/components/telegram-bot-dialogs",
   "license": "MIT",
-  "version": "0.2.1-dev",
+  "version": "0.2.2-dev",
   "authors": [
     {
       "name": "Kirill Zorin",
@@ -23,7 +23,7 @@
   "require": {
     "php": ">=5.5.9",
     "illuminate/support": "^5.2",
-    "irazasyed/telegram-bot-sdk": "^2.0",
+    "irazasyed/telegram-bot-sdk": "3.0.x-dev",
     "illuminate/redis": "^5.2",
     "symfony/yaml": "3.*"
   },
