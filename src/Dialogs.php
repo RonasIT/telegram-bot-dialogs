@@ -74,11 +74,14 @@ class Dialogs
         $chatId = $dialog->getChat()->getId();
         $dialog->proceed();
 
-        if ($dialog->isEnd()) {
-            Redis::del($chatId);
-        } else {
-            $this->setField($chatId, 'next', $dialog->getNext());
-            $this->setField($chatId, 'memory', $dialog->getMemory());
+        $dialogAfterProceed = self::get($update);
+        if (get_class($dialog) === get_class($dialogAfterProceed)) {
+            if ($dialog->isEnd()) {
+                Redis::del($chatId);
+            } else {
+                $this->setField($chatId, 'next', $dialog->getNext());
+                $this->setField($chatId, 'memory', $dialog->getMemory());
+            }
         }
     }
 
