@@ -63,10 +63,12 @@ class Dialogs
 
     /**
      * @param Update $update
+     * @param Dialog $proceededDialog
+     * @internal param Dialog $dialog
      */
-    public function proceed(Update $update)
+    public function proceed(Update $update, Dialog $proceededDialog = null)
     {
-        $dialog = self::get($update);
+        $dialog = ($proceededDialog) ? $proceededDialog : self::get($update);
 
         if (!$dialog) {
             return;
@@ -74,8 +76,7 @@ class Dialogs
         $chatId = $dialog->getChat()->getId();
         $dialog->proceed();
 
-        $dialogAfterProceed = self::get($update);
-        if (get_class($dialog) === get_class($dialogAfterProceed)) {
+        if (get_class($dialog) === Redis::hget($chatId, 'dialog')) {
             if ($dialog->isEnd()) {
                 Redis::del($chatId);
             } else {
