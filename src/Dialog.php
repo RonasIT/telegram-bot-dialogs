@@ -117,7 +117,7 @@ class Dialog
 
         if (!$this->isEnd()) {
             Telegram::sendChatAction([
-                'chat_id' => $this->update->getMessage()->getChat()->getId(),
+                'chat_id' => $this->update->getChat()->getId(),
                 'action' => Actions::TYPING
             ]);
 
@@ -278,7 +278,7 @@ class Dialog
      */
     public function getChat()
     {
-        return $this->update->getMessage()->getChat();
+        return $this->update->getChat();
     }
 
 

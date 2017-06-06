@@ -43,7 +43,7 @@ class Dialogs
      */
     public function get(Update $update)
     {
-        $chatId = $update->getMessage()->getChat()->getId();
+        $chatId = $update->getChat()->getId();
 
         if (!Redis::exists($chatId)) {
             return false;
@@ -92,7 +92,8 @@ class Dialogs
      */
     public function exists(Update $update)
     {
-        if (!Redis::exists($update->getMessage()->getChat()->getId())) {
+        $chat = $update->getChat();
+        if (!isset($chat) || !Redis::exists($chat->getId())) {
             return false;
         }
 
